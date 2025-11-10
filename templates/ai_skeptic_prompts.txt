@@ -1,0 +1,8 @@
+“Find 5 examples where [EVENT] happened but [SIGNAL] did NOT appear within 48 hours.”
+“Show me every date in my timeline that contradicts my hunch — don’t hold back.”
+“Pull the original document for every claim in this row. No summaries. Just the raw file.”
+“Compare my pattern to a control: same time period, different topic. Any overlap?”
+“List every public denial, correction, or retraction of [EVENT] from official sources.”
+“Run the numbers again with a wider window (e.g., ±7 days). Does the pattern still hold?”
+“Find 3 alternative explanations for this correlation — even if they sound boring.”
+“Search X, Reddit, and news archives for anyone who already debunked this. Quote them.”
