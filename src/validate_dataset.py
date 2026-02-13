@@ -3,13 +3,12 @@
 validate_dataset.py - Scan a CSV file and flag dirty data.
 
 Usage:
-    python -m src.validate_dataset path/to/dataset.csv
     python src/validate_dataset.py path/to/dataset.csv
 
 Checks performed:
-    1. Missing required columns (from config/settings.yaml)
+    1. Missing required columns (date, entity, event_type, source_url, verification_status)
     2. Dates in the future (potential hallucinations)
-    3. Invalid date formats (not matching configured format)
+    3. Invalid date formats (not YYYY-MM-DD)
     4. Missing source_url entries
     5. Empty required fields
     6. Invalid verification_status values
@@ -17,7 +16,7 @@ Checks performed:
 
 Exit codes:
     0 - All checks passed (warnings may still exist)
-    1 - Critical issues found (missing columns or error rate exceeds threshold)
+    1 - Critical issues found (missing columns or >20% of rows have errors)
     2 - File not found or unreadable
 """
 
@@ -41,18 +40,21 @@ VALID_VERIFICATION = set(_schema["valid_verification_statuses"])
 DATE_FORMAT = _validation["date_format"]
 ERROR_RATE_THRESHOLD = _validation["error_rate_threshold"]
 
+# ── Standard Schema ──────────────────────────────────────────────────────────
+REQUIRED_COLUMNS = ["date", "entity", "event_type", "source_url", "verification_status"]
+VALID_VERIFICATION = {"Verified", "Unverified", "Debunked"}
+
 
 def load_csv(filepath):
     """Load a CSV file and return the DataFrame."""
     try:
         df = pd.read_csv(filepath, dtype=str)  # Read everything as strings for validation.
-        logger.info("Loaded %s (%d rows, %d columns)", filepath, len(df), len(df.columns))
         return df
     except FileNotFoundError:
-        logger.error("File not found: %s", filepath)
+        print(f"ERROR: File not found: {filepath}")
         sys.exit(2)
     except Exception as e:
-        logger.error("Could not read %s: %s", filepath, e)
+        print(f"ERROR: Could not read {filepath}: {e}")
         sys.exit(2)
 
 
@@ -61,7 +63,6 @@ def check_required_columns(df):
     missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     issues = []
     if missing:
-        logger.warning("Missing required columns: %s", ", ".join(missing))
         issues.append({
             "severity": "CRITICAL",
             "check": "required_columns",
@@ -72,7 +73,7 @@ def check_required_columns(df):
 
 
 def check_date_format(df):
-    """Check that dates match the configured format."""
+    """Check that dates are in YYYY-MM-DD format."""
     if "date" not in df.columns:
         return []
 
@@ -82,7 +83,7 @@ def check_date_format(df):
         if pd.isna(val) or val.strip() == "":
             continue  # Handled by empty-field check.
         try:
-            datetime.strptime(val.strip(), DATE_FORMAT)
+            datetime.strptime(val.strip(), "%Y-%m-%d")
         except ValueError:
             bad_rows.append(idx)
 
@@ -91,7 +92,7 @@ def check_date_format(df):
         issues.append({
             "severity": "ERROR",
             "check": "date_format",
-            "message": f"{len(bad_rows)} row(s) have dates not in {DATE_FORMAT} format.",
+            "message": f"{len(bad_rows)} row(s) have dates not in YYYY-MM-DD format.",
             "rows": bad_rows,
         })
     return issues
@@ -109,14 +110,13 @@ def check_future_dates(df):
         if pd.isna(val) or val.strip() == "":
             continue
         try:
-            d = datetime.strptime(val.strip(), DATE_FORMAT).date()
+            d = datetime.strptime(val.strip(), "%Y-%m-%d").date()
             if d > today:
                 future_rows.append(idx)
         except ValueError:
             pass  # Already caught by date_format check.
 
     if future_rows:
-        logger.warning("%d row(s) have dates in the future (after %s)", len(future_rows), today)
         issues.append({
             "severity": "WARNING",
             "check": "future_dates",
@@ -138,7 +138,6 @@ def check_missing_source_urls(df):
             missing_rows.append(idx)
 
     if missing_rows:
-        logger.warning("%d row(s) are missing a source_url", len(missing_rows))
         issues.append({
             "severity": "ERROR",
             "check": "missing_source_url",
@@ -163,7 +162,6 @@ def check_invalid_urls(df):
             bad_rows.append(idx)
 
     if bad_rows:
-        logger.warning("%d row(s) have invalid source_urls", len(bad_rows))
         issues.append({
             "severity": "WARNING",
             "check": "invalid_urls",
@@ -184,7 +182,6 @@ def check_empty_required_fields(df):
             if pd.isna(val) or val.strip() == "":
                 empty_rows.append(idx)
         if empty_rows:
-            logger.warning("%d row(s) have an empty '%s' field", len(empty_rows), col)
             issues.append({
                 "severity": "ERROR",
                 "check": f"empty_{col}",
@@ -210,10 +207,6 @@ def check_verification_status(df):
             bad_values.add(val.strip())
 
     if bad_rows:
-        logger.warning(
-            "%d row(s) have non-standard verification_status: %s",
-            len(bad_rows), bad_values
-        )
         issues.append({
             "severity": "WARNING",
             "check": "verification_status",
@@ -233,7 +226,6 @@ def check_duplicates(df):
     dup_mask = df.duplicated(keep="first")
     dup_rows = list(df[dup_mask].index)
     if dup_rows:
-        logger.warning("%d duplicate row(s) found", len(dup_rows))
         issues.append({
             "severity": "WARNING",
             "check": "duplicates",
@@ -241,20 +233,6 @@ def check_duplicates(df):
             "rows": dup_rows,
         })
     return issues
-
-
-def run_all_checks(df):
-    """Run every validation check and return the combined issues list."""
-    all_issues = []
-    all_issues.extend(check_required_columns(df))
-    all_issues.extend(check_date_format(df))
-    all_issues.extend(check_future_dates(df))
-    all_issues.extend(check_missing_source_urls(df))
-    all_issues.extend(check_invalid_urls(df))
-    all_issues.extend(check_empty_required_fields(df))
-    all_issues.extend(check_verification_status(df))
-    all_issues.extend(check_duplicates(df))
-    return all_issues
 
 
 def print_report(filepath, df, all_issues):
@@ -266,7 +244,6 @@ def print_report(filepath, df, all_issues):
     print("=" * 70)
 
     if not all_issues:
-        logger.info("All checks passed for %s", filepath)
         print("\n  All checks passed. No issues found.\n")
         return 0
 
@@ -298,32 +275,37 @@ def print_report(filepath, df, all_issues):
         total_error_rows.update(issue["rows"])
 
     error_rate = len(total_error_rows) / len(df) * 100 if len(df) > 0 else 0
-    logger.info(
-        "Validation complete: %d/%d rows (%.1f%%) have issues",
-        len(total_error_rows), len(df), error_rate
-    )
     print(f"\n  Summary: {len(total_error_rows)}/{len(df)} rows ({error_rate:.1f}%) have issues.")
     print()
 
     # Determine exit code.
-    if critical or error_rate > ERROR_RATE_THRESHOLD:
+    if critical or error_rate > 20:
         return 1
     return 0
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python -m src.validate_dataset <path_to_csv>")
+        print("Usage: python src/validate_dataset.py <path_to_csv>")
         print()
         print("Example:")
-        print("  python -m src.validate_dataset My_Datasets_as_Examples/BlackRock_Timeline_Full_Decade.csv")
+        print("  python src/validate_dataset.py My_Datasets_as_Examples/BlackRock_Timeline_Full_Decade.csv")
         sys.exit(1)
 
     filepath = sys.argv[1]
-    logger.info("Starting validation for %s", filepath)
-
     df = load_csv(filepath)
-    all_issues = run_all_checks(df)
+
+    # Run all checks.
+    all_issues = []
+    all_issues.extend(check_required_columns(df))
+    all_issues.extend(check_date_format(df))
+    all_issues.extend(check_future_dates(df))
+    all_issues.extend(check_missing_source_urls(df))
+    all_issues.extend(check_invalid_urls(df))
+    all_issues.extend(check_empty_required_fields(df))
+    all_issues.extend(check_verification_status(df))
+    all_issues.extend(check_duplicates(df))
+
     exit_code = print_report(filepath, df, all_issues)
     sys.exit(exit_code)
 
