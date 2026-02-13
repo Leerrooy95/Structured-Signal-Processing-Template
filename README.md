@@ -11,6 +11,32 @@ A methodology reference and toolkit for building, validating, and analyzing stru
 
 ---
 
+## Quick Start
+
+```bash
+# 1. Clone & install
+git clone https://github.com/Leerrooy95/Structured-Signal-Processing-Template.git
+cd Structured-Signal-Processing-Template
+pip install -r requirements.txt
+
+# 2. Scaffold a new dataset
+python src/scaffold_new_dataset.py
+
+# 3. Validate your data
+python src/validate_dataset.py path/to/your_dataset.csv
+
+# 4. Correlate with temporal anchors
+python src/correlate_anchors.py \
+    --target path/to/your_dataset.csv \
+    --anchor My_Datasets_as_Examples/Holidays_2015_2025_Verified.csv \
+    --window 3 \
+    --baseline
+```
+
+That's the whole loop: **Scaffold** → **Fill in your data** → **Validate** → **Correlate**.
+
+---
+
 ## What This Repo Does
 
 This repository is a **reusable toolkit** for OSINT research. Clone it whenever you start a new investigation to get:
@@ -26,11 +52,6 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 ## Repository Structure
 
 ```
-├── My_Datasets_as_Examples/       # Reference datasets (ground truth)
-│   ├── BlackRock_Timeline_Full_Decade.csv   (674 rows - Entity Tracking)
-│   ├── policy_cleaned.csv                   (60 rows  - Regulatory Compliance)
-│   └── Holidays_2015_2025_Verified.csv      (44 rows  - Temporal Anchors)
-│
 ├── src/                           # Python toolkit
 │   ├── scaffold_new_dataset.py    # Generate a blank CSV with correct headers
 │   ├── validate_dataset.py        # Scan for dirty data and flag issues
@@ -40,62 +61,27 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 │   ├── DATA_SCHEMA_STANDARD.md    # Column specification for all datasets
 │   └── RESEARCH_PROTOCOL.md       # Step-by-step: Raw Lead → Verified Dataset
 │
-├── templates/                     # CSV templates and self-challenge prompts
-│   ├── ai_skeptic_prompts.txt     # 8 prompts to stress-test your findings
-│   └── templates/
-│       ├── template_timeline.csv
-│       └── publish_checklist.md
+├── My_Datasets_as_Examples/       # Reference datasets (ground truth)
+│   ├── BlackRock_Timeline_Full_Decade.csv
+│   ├── policy_cleaned.csv
+│   └── Holidays_2015_2025_Verified.csv
 │
-├── Claude_Code_Opus_4.6_Analysis/ # Automated analysis of dataset gaps
+├── templates/                     # CSV templates & checklists
+│   ├── template_timeline.csv
+│   └── publish_checklist.md
 │
-├── QUICKSTART.md
-├── LIMITATIONS.md
+├── config/settings.yaml           # Central configuration
+├── archive/                       # Older notes & analysis (kept for reference)
+├── tests/                         # Automated tests
+├── logs/                          # Runtime logs
 └── requirements.txt
 ```
 
 ---
 
-## Quick Start
-
-### 1. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Scaffold a new dataset
-
-```bash
-python src/scaffold_new_dataset.py
-```
-
-The script asks what you're tracking and generates a blank CSV with the standard column headers defined in [docs/DATA_SCHEMA_STANDARD.md](docs/DATA_SCHEMA_STANDARD.md).
-
-### 3. Validate your data
-
-```bash
-python src/validate_dataset.py path/to/your_dataset.csv
-```
-
-Flags future dates (hallucinations), missing source URLs, invalid date formats, empty required fields, and non-standard verification statuses.
-
-### 4. Correlate with temporal anchors
-
-```bash
-python src/correlate_anchors.py \
-    --target path/to/your_dataset.csv \
-    --anchor My_Datasets_as_Examples/Holidays_2015_2025_Verified.csv \
-    --window 3 \
-    --baseline
-```
-
-Calculates how many of your events fall within ±N days of anchor dates (holidays, elections, etc.) and compares against a random baseline to test statistical significance.
-
----
-
 ## Reference Datasets
 
-The `My_Datasets_as_Examples/` folder contains three datasets that prove the methodology works. These are the "ground truth" - the toolkit was designed to produce datasets of this quality.
+The `My_Datasets_as_Examples/` folder contains three datasets that prove the methodology works. These are the "ground truth" — the toolkit was designed to produce datasets of this quality.
 
 | Dataset | Rows | Purpose | Coverage |
 |---------|------|---------|----------|
@@ -115,15 +101,9 @@ The full research protocol is documented in [docs/RESEARCH_PROTOCOL.md](docs/RES
 2. **Collect** events from official sources, journalism, and AI-assisted search.
 3. **Validate** with automated checks and manual review.
 4. **Correlate** with anchor datasets to detect temporal patterns.
-5. **Publish** after self-challenging with skeptic prompts.
+5. **Publish** after self-challenging with the skeptic prompts in [archive/ai_skeptic_prompts.txt](archive/ai_skeptic_prompts.txt).
 
 The same method works for financial tracking, policy analysis, social media events, or anything with dates and observations.
-
----
-
-## Self-Challenge
-
-Before trusting any finding, run through the 8 skeptic prompts in `templates/ai_skeptic_prompts.txt`. If your dataset survives, it's ready to share.
 
 ---
 
