@@ -27,6 +27,9 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
+# Logs
+logs/*.log
+
 # Generated datasets (scaffold output)
 # Uncomment the line below if you want to ignore generated CSVs in the root:
 # *_dataset_*.csv
