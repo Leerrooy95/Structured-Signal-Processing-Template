@@ -1,4 +1,4 @@
-# My Datasets
+# Example Datasets
 
 *Datasets from:* [The Regulated Friction Project](https://github.com/Leerrooy95/The_Regulated_Friction_Project)
 
