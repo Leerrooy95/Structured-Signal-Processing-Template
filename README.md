@@ -1,6 +1,6 @@
 # The OSINT Data Pipeline
 
-v1.0ish (forgot to make a release originally)
+**v1.0ish** (forgot to make a release originally)
 
 A methodology reference and toolkit for building, validating, and analyzing structured OSINT datasets.
 
