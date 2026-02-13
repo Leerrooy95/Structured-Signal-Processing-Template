@@ -40,10 +40,6 @@ VALID_VERIFICATION = set(_schema["valid_verification_statuses"])
 DATE_FORMAT = _validation["date_format"]
 ERROR_RATE_THRESHOLD = _validation["error_rate_threshold"]
 
-# ── Standard Schema ──────────────────────────────────────────────────────────
-REQUIRED_COLUMNS = ["date", "entity", "event_type", "source_url", "verification_status"]
-VALID_VERIFICATION = {"Verified", "Unverified", "Debunked"}
-
 
 def load_csv(filepath):
     """Load a CSV file and return the DataFrame."""
@@ -235,6 +231,20 @@ def check_duplicates(df):
     return issues
 
 
+def run_all_checks(df):
+    """Run all validation checks on a DataFrame and return combined issues."""
+    all_issues = []
+    all_issues.extend(check_required_columns(df))
+    all_issues.extend(check_date_format(df))
+    all_issues.extend(check_future_dates(df))
+    all_issues.extend(check_missing_source_urls(df))
+    all_issues.extend(check_invalid_urls(df))
+    all_issues.extend(check_empty_required_fields(df))
+    all_issues.extend(check_verification_status(df))
+    all_issues.extend(check_duplicates(df))
+    return all_issues
+
+
 def print_report(filepath, df, all_issues):
     """Print a formatted validation report."""
     print()
@@ -296,15 +306,7 @@ def main():
     df = load_csv(filepath)
 
     # Run all checks.
-    all_issues = []
-    all_issues.extend(check_required_columns(df))
-    all_issues.extend(check_date_format(df))
-    all_issues.extend(check_future_dates(df))
-    all_issues.extend(check_missing_source_urls(df))
-    all_issues.extend(check_invalid_urls(df))
-    all_issues.extend(check_empty_required_fields(df))
-    all_issues.extend(check_verification_status(df))
-    all_issues.extend(check_duplicates(df))
+    all_issues = run_all_checks(df)
 
     exit_code = print_report(filepath, df, all_issues)
     sys.exit(exit_code)
