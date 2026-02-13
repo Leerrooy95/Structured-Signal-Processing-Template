@@ -7,21 +7,15 @@ Loads a "Target" dataset (e.g., policy events) and an "Anchor" dataset
 a configurable window of an anchor event.
 
 Usage:
-    python src/correlate_anchors.py --target path/to/target.csv --anchor path/to/anchor.csv
-    python src/correlate_anchors.py --target path/to/target.csv --anchor path/to/anchor.csv --window 7
-    python src/correlate_anchors.py --target path/to/target.csv --anchor path/to/anchor.csv --window 3 --baseline
+    python -m src.correlate_anchors --target path/to/target.csv --anchor path/to/anchor.csv
+    python -m src.correlate_anchors --target path/to/target.csv --anchor path/to/anchor.csv --window 7
+    python -m src.correlate_anchors --target path/to/target.csv --anchor path/to/anchor.csv --window 3 --baseline
 
 Arguments:
     --target    Path to the target CSV (must have a 'date' column in YYYY-MM-DD format)
     --anchor    Path to the anchor CSV (must have a 'date' column in YYYY-MM-DD format)
-    --window    Number of days for the proximity window (default: 3, meaning +-3 days)
+    --window    Number of days for the proximity window (default from config/settings.yaml)
     --baseline  Run a Monte Carlo baseline comparison with random dates
-
-Example:
-    python src/correlate_anchors.py \\
-        --target My_Datasets_as_Examples/policy_cleaned.csv \\
-        --anchor My_Datasets_as_Examples/Holidays_2015_2025_Verified.csv \\
-        --window 3
 """
 
 import argparse
@@ -30,6 +24,19 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
+
+from src.config_loader import load_settings, get_logger
+
+# ── Load config and logger ───────────────────────────────────────────────────
+_settings = load_settings()
+_correlation = _settings["correlation"]
+_validation = _settings["validation"]
+
+logger = get_logger("correlate_anchors", _settings)
+
+DEFAULT_WINDOW = _correlation["default_window_days"]
+BASELINE_SIMULATIONS = _correlation["baseline_simulations"]
+DATE_FORMAT = _validation["date_format"]
 
 
 def load_dates(filepath, date_column="date"):
@@ -42,15 +49,14 @@ def load_dates(filepath, date_column="date"):
     try:
         df = pd.read_csv(filepath, dtype=str)
     except FileNotFoundError:
-        print(f"ERROR: File not found: {filepath}")
+        logger.error("File not found: %s", filepath)
         sys.exit(2)
     except Exception as e:
-        print(f"ERROR: Could not read {filepath}: {e}")
+        logger.error("Could not read %s: %s", filepath, e)
         sys.exit(2)
 
     if date_column not in df.columns:
-        print(f"ERROR: '{date_column}' column not found in {filepath}.")
-        print(f"  Available columns: {list(df.columns)}")
+        logger.error("'%s' column not found in %s. Available: %s", date_column, filepath, list(df.columns))
         sys.exit(1)
 
     dates = []
@@ -60,14 +66,15 @@ def load_dates(filepath, date_column="date"):
             skipped += 1
             continue
         try:
-            d = datetime.strptime(str(val).strip(), "%Y-%m-%d").date()
+            d = datetime.strptime(str(val).strip(), DATE_FORMAT).date()
             dates.append(d)
         except ValueError:
             skipped += 1
 
     if skipped > 0:
-        print(f"  Note: Skipped {skipped} rows in {filepath} (missing or unparseable dates).")
+        logger.info("Skipped %d rows in %s (missing or unparseable dates)", skipped, filepath)
 
+    logger.info("Loaded %d valid dates from %s", len(dates), filepath)
     return sorted(dates)
 
 
@@ -95,16 +102,20 @@ def find_matches(target_dates, anchor_dates, window_days):
                 matched_targets.add(target_date)
                 matched_anchors.add(anchor_date)
 
+    logger.info("Found %d matches (window=+-%d days)", len(matches), window_days)
     return matches, matched_targets, matched_anchors
 
 
-def run_baseline(target_dates, anchor_dates, window_days, n_simulations=1000):
+def run_baseline(target_dates, anchor_dates, window_days, n_simulations=None):
     """
     Monte Carlo baseline: generate random target dates within the same date
     range and count how many fall near anchor dates by chance.
 
     Returns the mean and standard deviation of the match count across simulations.
     """
+    if n_simulations is None:
+        n_simulations = BASELINE_SIMULATIONS
+
     if not target_dates or not anchor_dates:
         return 0.0, 0.0
 
@@ -116,6 +127,8 @@ def run_baseline(target_dates, anchor_dates, window_days, n_simulations=1000):
 
     n_target = len(target_dates)
     match_counts = []
+
+    logger.info("Running %d baseline simulations...", n_simulations)
 
     for _ in range(n_simulations):
         # Generate random dates in the same range.
@@ -131,7 +144,10 @@ def run_baseline(target_dates, anchor_dates, window_days, n_simulations=1000):
                     count += 1
         match_counts.append(count)
 
-    return float(np.mean(match_counts)), float(np.std(match_counts))
+    mean_val = float(np.mean(match_counts))
+    std_val = float(np.std(match_counts))
+    logger.info("Baseline result: %.1f +- %.1f matches", mean_val, std_val)
+    return mean_val, std_val
 
 
 def print_report(target_path, anchor_path, target_dates, anchor_dates,
@@ -197,14 +213,16 @@ def main():
         help="Path to the anchor CSV (must have a 'date' column)."
     )
     parser.add_argument(
-        "--window", type=int, default=3,
-        help="Proximity window in days (default: 3, meaning +-3 days)."
+        "--window", type=int, default=DEFAULT_WINDOW,
+        help=f"Proximity window in days (default: {DEFAULT_WINDOW}, meaning +-{DEFAULT_WINDOW} days)."
     )
     parser.add_argument(
         "--baseline", action="store_true",
-        help="Run a Monte Carlo baseline comparison with 1000 random simulations."
+        help=f"Run a Monte Carlo baseline comparison with {BASELINE_SIMULATIONS} random simulations."
     )
     args = parser.parse_args()
+
+    logger.info("Correlation analysis: target=%s anchor=%s window=%d", args.target, args.anchor, args.window)
 
     print(f"\nLoading target: {args.target}")
     target_dates = load_dates(args.target)
@@ -213,9 +231,11 @@ def main():
     anchor_dates = load_dates(args.anchor)
 
     if not target_dates:
+        logger.error("No valid dates found in the target dataset")
         print("ERROR: No valid dates found in the target dataset.")
         sys.exit(1)
     if not anchor_dates:
+        logger.error("No valid dates found in the anchor dataset")
         print("ERROR: No valid dates found in the anchor dataset.")
         sys.exit(1)
 
@@ -228,7 +248,7 @@ def main():
     baseline_mean = None
     baseline_std = None
     if args.baseline:
-        print("  Running baseline simulation (1000 iterations)...")
+        print(f"  Running baseline simulation ({BASELINE_SIMULATIONS} iterations)...")
         baseline_mean, baseline_std = run_baseline(
             target_dates, anchor_dates, args.window
         )

@@ -30,9 +30,16 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 │   └── Holidays_2015_2025_Verified.csv      (44 rows  - Temporal Anchors)
 │
 ├── src/                           # Python toolkit
+│   ├── config_loader.py           # Loads settings.yaml + .env
 │   ├── scaffold_new_dataset.py    # Generate a blank CSV with correct headers
 │   ├── validate_dataset.py        # Scan for dirty data and flag issues
 │   └── correlate_anchors.py       # Measure temporal proximity between datasets
+│
+├── config/                        # Central configuration
+│   └── settings.yaml              # Schema, paths, thresholds, logging
+│
+├── tests/                         # Automated test suite
+│   └── test_validation.py         # Proves the validator catches bad data
 │
 ├── docs/                          # Methodology documentation
 │   ├── DATA_SCHEMA_STANDARD.md    # Column specification for all datasets
@@ -44,8 +51,8 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 │       ├── template_timeline.csv
 │       └── publish_checklist.md
 │
-├── Claude_Code_Opus_4.6_Analysis/ # Automated analysis of dataset gaps
-│
+├── logs/                          # Runtime logs (gitignored)
+├── .env.example                   # Template for API keys (copy to .env)
 ├── QUICKSTART.md
 ├── LIMITATIONS.md
 └── requirements.txt
@@ -61,26 +68,34 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 pip install -r requirements.txt
 ```
 
-### 2. Scaffold a new dataset
+### 2. Configure (optional)
+
+Edit `config/settings.yaml` to change default lag windows, paths, or validation thresholds. Copy `.env.example` to `.env` if you need API keys:
 
 ```bash
-python src/scaffold_new_dataset.py
+cp .env.example .env
+```
+
+### 3. Scaffold a new dataset
+
+```bash
+python -m src.scaffold_new_dataset
 ```
 
 The script asks what you're tracking and generates a blank CSV with the standard column headers defined in [docs/DATA_SCHEMA_STANDARD.md](docs/DATA_SCHEMA_STANDARD.md).
 
-### 3. Validate your data
+### 4. Validate your data
 
 ```bash
-python src/validate_dataset.py path/to/your_dataset.csv
+python -m src.validate_dataset path/to/your_dataset.csv
 ```
 
-Flags future dates (hallucinations), missing source URLs, invalid date formats, empty required fields, and non-standard verification statuses.
+Flags future dates (hallucinations), missing source URLs, invalid date formats, empty required fields, and non-standard verification statuses. Logs are written to `logs/validate_dataset.log`.
 
-### 4. Correlate with temporal anchors
+### 5. Correlate with temporal anchors
 
 ```bash
-python src/correlate_anchors.py \
+python -m src.correlate_anchors \
     --target path/to/your_dataset.csv \
     --anchor My_Datasets_as_Examples/Holidays_2015_2025_Verified.csv \
     --window 3 \
@@ -88,6 +103,14 @@ python src/correlate_anchors.py \
 ```
 
 Calculates how many of your events fall within ±N days of anchor dates (holidays, elections, etc.) and compares against a random baseline to test statistical significance.
+
+### 6. Run tests
+
+```bash
+pytest tests/ -v
+```
+
+Runs the automated test suite that feeds intentionally bad data to the validator and confirms every check catches it.
 
 ---
 

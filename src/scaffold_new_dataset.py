@@ -3,12 +3,14 @@
 scaffold_new_dataset.py - Generate a blank CSV with the Standard Schema headers.
 
 Usage:
+    python -m src.scaffold_new_dataset
     python src/scaffold_new_dataset.py
 
 The script will ask you what you're tracking and create a correctly-formatted
 blank CSV file so you don't have to remember or type the column headers manually.
 
 The generated CSV follows the Data Schema Standard defined in docs/DATA_SCHEMA_STANDARD.md.
+Column definitions and event types are loaded from config/settings.yaml.
 """
 
 import os
@@ -17,40 +19,18 @@ from datetime import datetime
 
 import pandas as pd
 
+from src.config_loader import load_settings, get_logger
 
-# ── Standard Schema columns ──────────────────────────────────────────────────
-# Required columns that every dataset must have.
-REQUIRED_COLUMNS = [
-    "date",                  # ISO 8601 (YYYY-MM-DD)
-    "entity",                # What/who is being tracked
-    "event_type",            # Classification (Policy, Financial, Legal, etc.)
-    "source_url",            # Link to the primary source
-    "verification_status",   # Verified / Unverified / Debunked
-]
+# ── Load config and logger ───────────────────────────────────────────────────
+_settings = load_settings()
+_schema = _settings["schema"]
+_paths = _settings["paths"]
 
-# Recommended columns that add useful context.
-RECOMMENDED_COLUMNS = [
-    "year",                  # Extracted from date, useful for grouping
-    "title",                 # Short label for the event
-    "snippet",              # Brief excerpt from the source
-    "category",              # Higher-level grouping
-    "country",               # Country relevant to the event
-    "date_confidence",       # High / Medium / Low
-    "date_scraped",          # When this row was collected
-    "notes",                 # Anything else
-]
+logger = get_logger("scaffold_new_dataset", _settings)
 
-# Valid event types from the standard.
-EVENT_TYPES = [
-    "Policy",
-    "Financial",
-    "Legal",
-    "Appointment",
-    "Statement",
-    "Temporal_Anchor",
-    "Crisis",
-    "Technology",
-]
+REQUIRED_COLUMNS = _schema["required_columns"]
+RECOMMENDED_COLUMNS = _schema["recommended_columns"]
+EVENT_TYPES = _schema["event_types"]
 
 
 def prompt_user():
@@ -64,8 +44,11 @@ def prompt_user():
     # ── What are you tracking? ────────────────────────────────────────────
     entity = input("What entity are you tracking? (e.g., BlackRock, DHS, FDA): ").strip()
     if not entity:
+        logger.error("No entity name provided")
         print("Error: Entity name is required.")
         sys.exit(1)
+
+    logger.info("Entity: %s", entity)
 
     # ── What kind of events? ──────────────────────────────────────────────
     print("\nAvailable event types:")
@@ -94,6 +77,8 @@ def prompt_user():
         selected_types = EVENT_TYPES[:]
         print("No valid selection - defaulting to all event types.")
 
+    logger.info("Selected event types: %s", selected_types)
+
     # ── Include recommended columns? ──────────────────────────────────────
     include_recommended = (
         input("\nInclude recommended columns (year, title, snippet, etc.)? [Y/n]: ")
@@ -116,7 +101,7 @@ def prompt_user():
     return entity, selected_types, use_recommended, filename
 
 
-def create_csv(entity, selected_types, use_recommended, filename):
+def create_csv(entity, selected_types, use_recommended, filename, output_dir=None):
     """Create the blank CSV file with the correct headers."""
     columns = REQUIRED_COLUMNS[:]
     if use_recommended:
@@ -125,10 +110,12 @@ def create_csv(entity, selected_types, use_recommended, filename):
     # Create an empty DataFrame with the standard columns.
     df = pd.DataFrame(columns=columns)
 
-    # Determine output path: put it in the current working directory.
-    output_path = os.path.join(os.getcwd(), filename)
+    # Determine output path.
+    base_dir = output_dir or _paths.get("output_dir", ".")
+    output_path = os.path.join(base_dir, filename)
 
     df.to_csv(output_path, index=False)
+    logger.info("Created dataset: %s (%d columns)", output_path, len(columns))
 
     return output_path, columns, selected_types
 
@@ -152,7 +139,7 @@ def main():
     print(f"  1. Open {filename} in your editor or spreadsheet tool.")
     print(f"  2. Add rows - one event per row.")
     print(f"  3. Set verification_status to 'Unverified' for new entries.")
-    print(f"  4. Run: python src/validate_dataset.py {filename}")
+    print(f"  4. Run: python -m src.validate_dataset {filename}")
     print()
 
 
