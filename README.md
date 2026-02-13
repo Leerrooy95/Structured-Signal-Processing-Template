@@ -1,6 +1,6 @@
 (https://img.shields.io/badge/UVB--76-4625kHz-red)](https://en.wikipedia.org/wiki/UVB-76) [![Template](https://img.shields.io/badge/Template-Forkable-blue)](https://github.com/Leerrooy95/UVB-76-analysis/generate)
 
-# uvb-76-analysis-
+# Structured-Signal-Processing-Template
 
 [UVB-76 Analysis](https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main)
 
