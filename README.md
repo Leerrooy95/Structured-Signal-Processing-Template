@@ -2,7 +2,7 @@
 
 # uvb-76-analysis-
 
-(UVB-76 Analysis)[https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main] 
+[UVB-76 Analysis](https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main)
 
 **TL;DR**: 7 messages aligned within 6 hours of events (p < 0.01). Reproducible for any timeline.
 
