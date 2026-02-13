@@ -5,7 +5,7 @@ A methodology reference and toolkit for building, validating, and analyzing stru
 **See Also:**
 - [The Regulated Friction Project](https://github.com/Leerrooy95/The_Regulated_Friction_Project)
 - [UVB-76 Analysis](https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main)
-- [If you don't think you're capable, click here for more personalized instructions.](https://github.com/user-attachments/files/23444776/Research-Without-Trust-A-Reproducible-Playbook.pdf)
+- [If you don't think you're capable, click here for more personalized instructions in the form of a PDF.](https://github.com/user-attachments/files/23444776/Research-Without-Trust-A-Reproducible-Playbook.pdf)
 
 ---
 
