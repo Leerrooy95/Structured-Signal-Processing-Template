@@ -1,8 +1,9 @@
 # Structured-Signal-Processing-Template
 
-**See Also:** [The Regulated Friction Project](https://github.com/Leerrooy95/The_Regulated_Friction_Project)
+**See Also:**
+• [The Regulated Friction Project](https://github.com/Leerrooy95/The_Regulated_Friction_Project)
 
-[UVB-76 Analysis](https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main)
+• [UVB-76 Analysis](https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main)
 
 **TL;DR**: 7 messages aligned within 6 hours of events (p < 0.01). Reproducible for any timeline.
 
