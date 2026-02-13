@@ -9,7 +9,7 @@ The script will ask you what you're tracking and create a correctly-formatted
 blank CSV file so you don't have to remember or type the column headers manually.
 
 The generated CSV follows the Data Schema Standard defined in docs/DATA_SCHEMA_STANDARD.md.
-"""
+2"""
 
 import os
 import sys

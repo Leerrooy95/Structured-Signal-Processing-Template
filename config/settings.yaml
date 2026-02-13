@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OSINT Data Pipeline - Settings
+# ─────────────────────────────────────────────────────────────────────────────
+# Central configuration for all toolkit scripts.
+# Edit these values instead of modifying the Python source code.
+
+# ── Schema: Required and recommended columns ────────────────────────────────
+schema:
+  required_columns:
+    - date
+    - entity
+    - event_type
+    - source_url
+    - verification_status
+
+  recommended_columns:
+    - year
+    - title
+    - snippet
+    - category
+    - country
+    - date_confidence
+    - date_scraped
+    - notes
+
+  valid_verification_statuses:
+    - Verified
+    - Unverified
+    - Debunked
+
+  event_types:
+    - Policy
+    - Financial
+    - Legal
+    - Appointment
+    - Statement
+    - Temporal_Anchor
+    - Crisis
+    - Technology
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+paths:
+  examples_dir: My_Datasets_as_Examples
+  output_dir: .
+  log_dir: logs
+
+# ── Correlation defaults ────────────────────────────────────────────────────
+correlation:
+  default_window_days: 3
+  baseline_simulations: 1000
+
+# ── Validation thresholds ───────────────────────────────────────────────────
+validation:
+  # If more than this percentage of rows have errors, exit with code 1.
+  error_rate_threshold: 20.0
+  date_format: "%Y-%m-%d"
+
+# ── Logging ─────────────────────────────────────────────────────────────────
+logging:
+  level: INFO
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  log_to_file: true
+  log_to_console: true

@@ -26,6 +26,19 @@ from urllib.parse import urlparse
 
 import pandas as pd
 
+from src.config_loader import load_settings, get_logger
+
+# ── Load config and logger ───────────────────────────────────────────────────
+_settings = load_settings()
+_schema = _settings["schema"]
+_validation = _settings["validation"]
+
+logger = get_logger("validate_dataset", _settings)
+
+REQUIRED_COLUMNS = _schema["required_columns"]
+VALID_VERIFICATION = set(_schema["valid_verification_statuses"])
+DATE_FORMAT = _validation["date_format"]
+ERROR_RATE_THRESHOLD = _validation["error_rate_threshold"]
 
 # ── Standard Schema ──────────────────────────────────────────────────────────
 REQUIRED_COLUMNS = ["date", "entity", "event_type", "source_url", "verification_status"]
@@ -75,6 +88,7 @@ def check_date_format(df):
             bad_rows.append(idx)
 
     if bad_rows:
+        logger.warning("%d row(s) have dates not in %s format", len(bad_rows), DATE_FORMAT)
         issues.append({
             "severity": "ERROR",
             "check": "date_format",
