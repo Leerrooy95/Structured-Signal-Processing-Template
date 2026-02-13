@@ -1,7 +1,8 @@
 # uvb-76-analysis-
 
-https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main
-[![UVB-76](https://img.shields.io/badge/UVB--76-4625kHz-red)](https://en.wikipedia.org/wiki/UVB-76) [![Template](https://img.shields.io/badge/Template-Forkable-blue)](https://github.com/Leerrooy95/UVB-76-analysis/generate)
+[UVB-76 Analysis](Structured-Signal-Processing-Template) https://github.com/Leerrooy95/UVB-76-Structured-Signal-Analysis/tree/main
+
+(https://img.shields.io/badge/UVB--76-4625kHz-red)](https://en.wikipedia.org/wiki/UVB-76) [![Template](https://img.shields.io/badge/Template-Forkable-blue)](https://github.com/Leerrooy95/UVB-76-analysis/generate)
 
 **TL;DR**: 7 messages aligned within 6 hours of events (p < 0.01). Reproducible for any timeline.
 
