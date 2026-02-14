@@ -61,3 +61,12 @@ logging:
   format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
   log_to_file: true
   log_to_console: true
+
+# ── Scraping (used by src/scrape_serp.py) ──────────────────────────────────
+scraping:
+  # SerpApi endpoint (change only if using a proxy or self-hosted instance)
+  serpapi_url: "https://serpapi.com/search"
+  # Default number of search results to fetch per query
+  default_num_results: 10
+  # Request timeout in seconds
+  timeout_seconds: 30
