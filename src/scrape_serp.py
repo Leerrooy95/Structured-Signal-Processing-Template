@@ -138,7 +138,7 @@ def search_serpapi(query, api_key, num_results=10):
     return results
 
 
-def results_to_rows(results, entity, event_type):
+def results_to_rows(results, entity, event_type, query=""):
     """
     Convert raw SerpApi results into rows matching the Data Schema Standard.
 
@@ -150,6 +150,8 @@ def results_to_rows(results, entity, event_type):
         The entity you are tracking (e.g. "BlackRock").
     event_type : str
         The event classification (e.g. "Financial", "Policy").
+    query : str
+        The original search query (recorded in notes for provenance).
 
     Returns
     -------
@@ -169,7 +171,7 @@ def results_to_rows(results, entity, event_type):
             "title": r.get("title", ""),
             "snippet": r.get("snippet", ""),
             "date_scraped": today,
-            "notes": f"Auto-collected via SerpApi. Query: {r.get('query', '')}",
+            "notes": f"Auto-collected via SerpApi. Query: {query}",
         })
 
     return rows
@@ -234,7 +236,7 @@ def main():
         sys.exit(0)
 
     # Convert to standard rows
-    rows = results_to_rows(results, args.entity, args.event_type)
+    rows = results_to_rows(results, args.entity, args.event_type, query=args.query)
 
     # Output path
     if args.output:

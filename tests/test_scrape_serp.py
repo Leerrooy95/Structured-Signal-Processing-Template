@@ -50,7 +50,10 @@ class TestResultsToRows:
 
         raw = [{"title": "Test", "link": "https://example.com", "snippet": "..."}]
         rows = results_to_rows(raw, entity="Test", event_type="Policy")
-        assert rows[0]["date_scraped"] == datetime.now().strftime("%Y-%m-%d")
+        # Verify the format is YYYY-MM-DD (don't compare exact value to avoid
+        # midnight race conditions).
+        assert len(rows[0]["date_scraped"]) == 10
+        datetime.strptime(rows[0]["date_scraped"], "%Y-%m-%d")  # Raises if bad format
 
     def test_empty_results(self):
         """An empty results list should produce an empty row list."""
