@@ -34,7 +34,58 @@ Before collecting any data, answer these questions in writing:
 1. **Official sources**: Government registries, SEC filings, court records, .gov/.mil sites
 2. **Primary journalism**: Reuters, AP, original investigative reports
 3. **Secondary sources**: Analysis pieces, opinion columns, blog posts (mark as lower confidence)
-4. **AI-assisted search**: Use LLMs to surface leads, but **never** trust AI output as a source. Every AI-generated claim must be traced back to a real URL.
+4. **API-based search (SerpApi)**: Use the included `scrape_serp.py` script to pull real Google results through the SerpApi service. This is the fastest way to collect leads at scale — see the step-by-step guide below.
+
+### How to Scrape Data with SerpApi
+
+SerpApi is a service that lets you pull structured Google search results through a simple API — no HTML scraping, no browser automation, no broken selectors. You send a search query, SerpApi sends back clean JSON with titles, URLs, and snippets.
+
+**One-time setup (takes 2 minutes):**
+
+1. Go to [serpapi.com](https://serpapi.com) and create a free account (100 searches/month free).
+2. Copy your API key from the SerpApi dashboard.
+3. In the project root, create your `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+4. Paste your key into `.env`:
+   ```
+   SERPAPI_KEY=paste_your_key_here
+   ```
+
+**Run a search:**
+
+```bash
+# Basic: search for BlackRock acquisitions and save to a CSV
+python src/scrape_serp.py "BlackRock acquisitions 2024"
+
+# Specify what entity you're tracking and what kind of events
+python src/scrape_serp.py "FDA drug approvals 2023" --entity FDA --event-type Policy
+
+# Get more results (default is 10)
+python src/scrape_serp.py "SEC enforcement actions" --num 20
+
+# Custom output filename
+python src/scrape_serp.py "DHS border policy" --output dhs_results.csv
+```
+
+**What happens behind the scenes:**
+
+1. `scrape_serp.py` reads your API key from `.env`
+2. It sends your search query to SerpApi
+3. SerpApi returns structured JSON (titles, URLs, snippets)
+4. The script maps each result into the standard CSV columns
+5. You get a CSV file ready for validation
+
+**After scraping, you still need to:**
+
+1. Open the CSV and fill in the `date` column (the script can't know when each event happened).
+2. Review each `source_url` and update `verification_status` to `Verified` or `Debunked`.
+3. Run `python src/validate_dataset.py your_file.csv` to catch any problems.
+
+> **Note:** SerpApi is not the only option. [SerperApi](https://serper.dev) is a similar service
+> with a different pricing model. The script uses SerpApi, but the concept is the same for any
+> search API: send a query, get structured results, convert to your standard schema.
 
 ### Collection Rules
 
@@ -146,7 +197,7 @@ If your dataset survives these challenges, it's ready to share.
 | Phase | Action | Tool |
 |-------|--------|------|
 | 1. Define | Write scope, generate blank CSV | `scaffold_new_dataset.py` |
-| 2. Collect | Gather events from sources | Manual + AI-assisted search |
+| 2. Collect | Scrape search results via API | `scrape_serp.py` (SerpApi) |
 | 3. Validate | Clean data, fix flags | `validate_dataset.py` |
 | 4. Correlate | Test for temporal patterns | `correlate_anchors.py` |
 | 5. Publish | Document, self-challenge, share | Checklist + skeptic prompts |

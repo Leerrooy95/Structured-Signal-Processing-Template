@@ -19,13 +19,21 @@ git clone https://github.com/Leerrooy95/Structured-Signal-Processing-Template.gi
 cd Structured-Signal-Processing-Template
 pip install -r requirements.txt
 
-# 2. Scaffold a new dataset
+# 2. Set up your SerpApi key (free: 100 searches/month)
+#    Sign up at https://serpapi.com, copy your key, then:
+cp .env.example .env
+#    Edit .env and paste your key next to SERPAPI_KEY=
+
+# 3. Scrape search results into a CSV
+python src/scrape_serp.py "BlackRock acquisitions 2024" --entity BlackRock --event-type Financial
+
+# 4. Or scaffold a blank dataset manually
 python src/scaffold_new_dataset.py
 
-# 3. Validate your data
+# 5. Validate your data
 python src/validate_dataset.py path/to/your_dataset.csv
 
-# 4. Correlate with temporal anchors
+# 6. Correlate with temporal anchors
 python src/correlate_anchors.py \
     --target path/to/your_dataset.csv \
     --anchor My_Datasets_as_Examples/Holidays_2015_2025_Verified.csv \
@@ -33,7 +41,7 @@ python src/correlate_anchors.py \
     --baseline
 ```
 
-That's the whole loop: **Scaffold** → **Fill in your data** → **Validate** → **Correlate**.
+That's the whole loop: **Scrape** → **Review & fill in dates** → **Validate** → **Correlate**.
 
 ---
 
@@ -42,10 +50,10 @@ That's the whole loop: **Scaffold** → **Fill in your data** → **Validate** �
 This repository is a **reusable toolkit** for OSINT research. Clone it whenever you start a new investigation to get:
 
 1. **A proven data schema** that keeps your datasets consistent and machine-readable.
-2. **Python scripts** that scaffold new datasets, validate data quality, and detect temporal correlations.
+2. **Python scripts** that scrape data from search APIs (SerpApi), scaffold new datasets, validate data quality, and detect temporal correlations.
 3. **Reference datasets** that demonstrate the methodology in practice.
 
-The pipeline follows five steps: **Define** → **Collect** → **Validate** → **Correlate** → **Publish**.
+The pipeline follows five steps: **Define** → **Scrape / Collect** → **Validate** → **Correlate** → **Publish**.
 
 ---
 
@@ -53,6 +61,7 @@ The pipeline follows five steps: **Define** → **Collect** → **Validate** →
 
 ```
 ├── src/                           # Python toolkit
+│   ├── scrape_serp.py             # Scrape Google results via SerpApi into CSV
 │   ├── scaffold_new_dataset.py    # Generate a blank CSV with correct headers
 │   ├── validate_dataset.py        # Scan for dirty data and flag issues
 │   └── correlate_anchors.py       # Measure temporal proximity between datasets
@@ -98,7 +107,7 @@ These datasets were produced as part of [The Regulated Friction Project](https:/
 The full research protocol is documented in [docs/RESEARCH_PROTOCOL.md](docs/RESEARCH_PROTOCOL.md). The short version:
 
 1. **Define** your scope: entity, time window, event types.
-2. **Collect** events from official sources, journalism, and AI-assisted search.
+2. **Scrape** events using `scrape_serp.py` (SerpApi) or collect manually from official sources and journalism.
 3. **Validate** with automated checks and manual review.
 4. **Correlate** with anchor datasets to detect temporal patterns.
 5. **Publish** after self-challenging with the skeptic prompts in [archive/ai_skeptic_prompts.txt](archive/ai_skeptic_prompts.txt).
